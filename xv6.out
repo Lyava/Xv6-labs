@@ -1,0 +1,27 @@
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+init: starting sh
+$ sh < xargstest.sh
+$ echo DONE
+mkdir: a failed to create
+$ $ mkdir: c failed to create
+$ $ $ .
+./
+./a
+./a/
+./a/b
+./a/bhello
+.
+./
+./c
+./c/
+./c/b
+./c/bhello
+.
+./
+./b
+./bhello
+$ $ DONE
