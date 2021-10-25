@@ -295,6 +295,8 @@ fork(void)
 
   np->state = RUNNABLE;
 
+  np -> mask = p -> mask;
+
   release(&np->lock);
 
   return pid;
@@ -692,4 +694,35 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+void 
+trace(int mask)
+{
+  myproc()->mask = mask;
+}
+
+//freemem of sysinfo
+int
+nproc(void)
+{
+  int uproc_num = 0;
+  for(int i = 0; i < NPROC; i++)
+  {
+    if(proc[i].state != UNUSED)
+      uproc_num++;
+  }
+  return uproc_num;
+}
+
+int 
+freefd(void)
+{
+  int freefd_num = 0;
+  for(int i = 0; i<NOFILE; i++)
+  {
+    if(myproc()->ofile[i] > 0)
+      freefd_num++;
+  }
+  return freefd_num;
 }
