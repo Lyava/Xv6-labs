@@ -134,29 +134,29 @@ static uint64 (*syscalls[])(void) = {
 };
 
 static char* nameofsyscall [] = {
-  "sys_fork",
-  "sys_exit",
-  "sys_wait",
-  "sys_pipe",
-  "sys_read",
-  "sys_kill",
-  "sys_exec",
-  "sys_fstat",
-  "sys_chdir",
-  "sys_dup",
-  "sys_getpid",
-  "sys_sbrk",
-  "sys_sleep",
-  "sys_uptime",
-  "sys_open",
-  "sys_write",
-  "sys_mknod",
-  "sys_unlink",
-  "sys_link",
-  "sys_mkdir",
-  "sys_close",
-  "sys_trace",
-  "sys_sysinfo"
+  "fork",
+  "exit",
+  "wait",
+  "pipe",
+  "read",
+  "kill",
+  "exec",
+  "fstat",
+  "chdir",
+  "dup",
+  "getpid",
+  "sbrk",
+  "sleep",
+  "uptime",
+  "open",
+  "write",
+  "mknod",
+  "unlink",
+  "link",
+  "mkdir",
+  "close",
+  "trace",
+  "sysinfo"
 };
 
 void
@@ -170,9 +170,10 @@ syscall(void)
 
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     p->trapframe->a0 = syscalls[num]();
-    if(p -> mask >> num & 1)
+    unsigned int zero  = 0;
+    if(p -> mask >> num & 1  || p->mask == ~zero >> 1)
     {
-      printf("%d: %s (%d) -> %d\n",p->pid, nameofsyscall[num - 1], p->trapframe->a0, addr);
+      printf("%d: sys_%s(%d) -> %d\n",p->pid, nameofsyscall[num - 1], addr, p->trapframe->a0);
     }
   } else {
     printf("%d %s: unknown sys call %d\n",

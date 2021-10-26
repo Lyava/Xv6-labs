@@ -709,7 +709,7 @@ nproc(void)
   int uproc_num = 0;
   for(int i = 0; i < NPROC; i++)
   {
-    if(proc[i].state != UNUSED)
+    if(proc[i].state == UNUSED)
       uproc_num++;
   }
   return uproc_num;
@@ -718,11 +718,11 @@ nproc(void)
 int 
 freefd(void)
 {
-  int freefd_num = 0;
+  int freefd_num = NOFILE;
   for(int i = 0; i<NOFILE; i++)
   {
-    if(myproc()->ofile[i] > 0)
-      freefd_num++;
+    if(myproc()->ofile[i])
+      freefd_num--;
   }
   return freefd_num;
 }
