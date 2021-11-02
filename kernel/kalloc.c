@@ -21,12 +21,16 @@ struct run {
 struct {
   struct spinlock lock;
   struct run *freelist;
-} kmem;
+} kmems[NCPU];
+
+char*lock_name[] = {"keme_1","keme_2","keme_3","keme_4","keme_5","keme_6","keme_7","keme_8",};
 
 void
 kinit()
 {
-  initlock(&kmem.lock, "kmem");
+  for(int i = 0; i < NCPU; i++){
+    initlock(&kmems[i].lock, lock_name[i]);
+  }
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -56,10 +60,14 @@ kfree(void *pa)
 
   r = (struct run*)pa;
 
-  acquire(&kmem.lock);
-  r->next = kmem.freelist;
-  kmem.freelist = r;
-  release(&kmem.lock);
+  push_off();
+  int cpu_id = cpuid();  //正在运行的cpu序号
+
+  acquire(&kmems[cpu_id].lock);
+  r->next = kmems[cpu_id].freelist;
+  kmems[cpu_id].freelist = r;
+  release(&kmems[cpu_id].lock);
+  pop_off();
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -70,12 +78,50 @@ kalloc(void)
 {
   struct run *r;
 
-  acquire(&kmem.lock);
-  r = kmem.freelist;
-  if(r)
-    kmem.freelist = r->next;
-  release(&kmem.lock);
+  push_off();
+  int cpu_id = cpuid();
 
+  acquire(&kmems[cpu_id].lock);
+  r = kmems[cpu_id].freelist;
+  if(r){
+    kmems[cpu_id].freelist = r->next;
+  }else{
+    int flag = 0;
+
+    for(int i = 0; i< NCPU;i++){
+      if( i == cpu_id)  continue;
+
+      acquire(&kmems[i].lock);
+      struct run *rp = kmems[i].freelist;
+
+      if(rp){
+        struct run *fr = rp;
+        struct run *pre = rp;
+        while(fr && fr->next){
+          fr = fr->next->next;
+          pre = rp;
+          rp = rp->next;
+        }
+        kmems[cpu_id].freelist = kmems[i].freelist;
+        if(rp == kmems[i].freelist){
+          kmems[i].freelist = 0;
+        }else {
+          kmems[i].freelist = rp;
+          pre->next = 0;
+        }
+        flag = 1;
+      }
+      release(&kmems[i].lock);
+      if(flag){
+        r = kmems[cpu_id].freelist;
+        kmems[cpu_id].freelist = r->next;
+        break;
+      }
+    }
+
+  }
+  release(&kmems[cpu_id].lock);
+  pop_off();
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
